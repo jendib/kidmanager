@@ -8,5 +8,4 @@ public interface EcoleDirecteConfig {
     String password();
     String cn();
     String cv();
-
 }

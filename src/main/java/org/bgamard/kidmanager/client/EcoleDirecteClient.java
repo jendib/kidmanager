@@ -6,6 +6,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.bgamard.kidmanager.client.model.LoginRequest;
 import org.bgamard.kidmanager.client.model.LoginResponse;
+import org.bgamard.kidmanager.client.model.MessageResponse;
 import org.bgamard.kidmanager.client.model.MessagesResponse;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
@@ -34,4 +35,12 @@ public interface EcoleDirecteClient {
     @ClientQueryParam(name = "query", value = "")
     @ClientQueryParam(name = "onlyRead", value = "")
     MessagesResponse messages(@HeaderParam("X-Token") String token, @PathParam("id") int id);
+
+    @POST
+    @Path("familles/{id}/messages/{messageId}.awp")
+    @ClientQueryParam(name = "verbe", value = "get")
+    @ClientQueryParam(name = "mode", value = "destinataire")
+    MessageResponse message(@HeaderParam("X-Token") String token,
+                            @PathParam("id") int id,
+                            @PathParam("messageId") int messageId);
 }
