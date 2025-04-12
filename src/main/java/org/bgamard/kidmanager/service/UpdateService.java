@@ -8,6 +8,8 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
 import org.bgamard.kidmanager.client.EcoleDirecteClient;
 import org.bgamard.kidmanager.client.model.LoginRequest;
 import org.bgamard.kidmanager.client.model.LoginResponse;
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class UpdateService {
@@ -83,14 +86,26 @@ public class UpdateService {
     }
 
     private LoginResponse login() {
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.identifiant = config.ecoledirecte().username();
-        loginRequest.motdepasse = config.ecoledirecte().password();
-        LoginRequest.Fa fa = new LoginRequest.Fa();
-        fa.cn = config.ecoledirecte().cn();
-        fa.cv = config.ecoledirecte().cv();
-        loginRequest.fa = List.of(fa);
-        return ecoleDirecteClient.login(loginRequest);
+        try (Response response = ecoleDirecteClient.gtk()) {
+            String gtk = response.getCookies()
+                    .get("GTK")
+                    .getValue();
+            NewCookie otherCookie = response.getCookies()
+                    .entrySet()
+                    .stream().filter(e -> !e.getKey().equals("GTK"))
+                    .findFirst()
+                    .map(Map.Entry::getValue)
+                    .orElseThrow(() -> new RuntimeException("Other cookie not found"));
+
+            LoginRequest loginRequest = new LoginRequest();
+            loginRequest.identifiant = config.ecoledirecte().username();
+            loginRequest.motdepasse = config.ecoledirecte().password();
+            LoginRequest.Fa fa = new LoginRequest.Fa();
+            fa.cn = config.ecoledirecte().cn();
+            fa.cv = config.ecoledirecte().cv();
+            loginRequest.fa = List.of(fa);
+            return ecoleDirecteClient.login(loginRequest, otherCookie.getName(), gtk);
+        }
     }
 
     private int getId(LoginResponse loginResponse) {
